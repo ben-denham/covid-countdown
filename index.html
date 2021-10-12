@@ -1,0 +1,134 @@
+<!doctype html>
+<html>
+  <head>
+    <title>NZ's Road to Covid Vaccination</title>
+    <link rel="icon" type="image/png" href="favicon.ico"/>
+    <script type="application/javascript" src="js/jquery-3.6.0.min.js"></script>
+    <script type="application/javascript" src="js/papaparse.min.js"></script>
+    <style>
+     html, body, #main {
+         margin: 0;
+         width: 100%;
+         height: 100%;
+     }
+     #main {
+         display: flex;
+         flex-direction: column;
+     }
+     #frodo-iframe {
+         flex: 1;
+         border: none;
+     }
+     #description {
+         margin: 0;
+         padding: 15px;
+         font-family: sans-serif;
+         line-height: 1.3em;
+         border-top: 3px solid black;
+         display: none;
+     }
+     #description span {
+         font-weight: bold;
+     }
+     #description a,
+     #description a:visited,
+     #description a:active {
+         color: #0170d2;
+     }
+    </style>
+  </head>
+  <body>
+    <div id="main">
+      <iframe id="frodo-iframe"></iframe>
+      <p id="description">
+        With a projected first-dose vaccination rate of <span id="daily-first-doses"></span>
+        and a lag time of <span id="lag-days"></span> between first and second doses, the
+        projected date to reach <span id="target-percent"></span> of second doses is
+        <span id="end-date"></span>. Data sourced from <a href="https://github.com/minhealthnz/nz-covid-data">github.com/minhealthnz/nz-covid-data</a>.
+        Based on <a href="https://ben-denham.github.io/journey-with-frodo">Journey with Frodo</a>,
+        source code available <a href="https://github.com/ben-denham/covid-countdown">here</a>.
+      </p>
+    </div>
+    <script type="application/javascript">
+     (function($) {
+
+       let csvUrl = 'https://raw.githubusercontent.com/minhealthnz/nz-covid-data/main/vaccine-data/latest/doses_by_date.csv'
+       let startDate = new Date('2021-08-16');
+       let regressionDays = 7;
+       let totalPopulation = 4209057;
+       let targetProportion = 0.9;
+       let targetDoses = totalPopulation * targetProportion;
+
+       Papa.parse(csvUrl, {
+         download: true,
+         header: true,
+         dynamicTyping: true,
+         skipEmptyLines: true,
+         transformHeader: function(header) {
+           switch (header) {
+             case 'Date':
+               return 'date';
+             case 'First dose administered':
+               return 'first_doses';
+             case 'Second dose administered':
+               return 'second_doses';
+             default:
+               return header;
+           }
+         },
+         complete: function(result) {
+           let vaccineRows = result.data;
+
+           // Add cumulative totals to each row.
+           let firstDoseTotal = 0;
+           let secondDoseTotal = 0;
+           vaccineRows.forEach(function(row) {
+             firstDoseTotal += row['first_doses'];
+             row['total_first_doses'] = firstDoseTotal;
+             secondDoseTotal += row['second_doses'];
+             row['total_second_doses'] = secondDoseTotal;
+           });
+
+           // Find the mean daily first doses over the last regressionDays.
+           let regressionFirstTotal = vaccineRows.slice(-regressionDays).reduce(function(sum, row) { return sum + row['first_doses']; }, 0);
+           let regressionFirstDailyMean = regressionFirstTotal / regressionDays;
+
+           let daysUntilFirstDoseTarget = Math.ceil((targetDoses - firstDoseTotal) / regressionFirstDailyMean);
+
+           // Find the first day first doses exceeded the current
+           // second dose total (because the index is one less than the
+           // day represented by it, this is the count of the day before
+           // it was exceeded).
+           let indexFirstExceededCurrentSecond =  vaccineRows.findIndex(function(row) {
+             return row['total_first_doses'] > secondDoseTotal
+           });
+           // Find the number of days it took for second doses to catch up.
+           let secondDoseLagDays = vaccineRows.length - indexFirstExceededCurrentSecond;
+
+           // Compute the project count of days until the second dose
+           // target is reached.
+           let daysUntilSecondDoseTarget = daysUntilFirstDoseTarget + secondDoseLagDays;
+
+           let latestDate = new Date(vaccineRows[vaccineRows.length - 1]['date']);
+           let endDate = new Date(latestDate);
+           endDate.setDate(endDate.getDate() + daysUntilSecondDoseTarget);
+
+           // Update page.
+           let iframeUrl = (
+             'https://ben-denham.github.io/journey-with-frodo/'
+             + '?start=' + startDate.toISOString().slice(0, 10)
+             + '&end=' + endDate.toISOString().slice(0, 10)
+             + '&title=NZ%27s+Road+to+Covid+Vaccination');
+           $('#frodo-iframe').attr('src', iframeUrl);
+           $('#daily-first-doses').text(Math.round(regressionFirstDailyMean).toLocaleString() + '/day');
+           $('#lag-days').text(secondDoseLagDays.toLocaleString() + ' days');
+           $('#target-percent').text((targetProportion * 100).toString() + '%');
+           $('#end-date').text(endDate.toDateString());
+           $('#description').show();
+         }
+       });
+
+     })(jQuery);
+    </script>
+  </body>
+</html>
