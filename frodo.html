@@ -1,0 +1,77 @@
+<!doctype html>
+<html>
+  <head>
+    <title>NZ's Road to Covid Vaccination</title>
+    <script type="application/javascript" src="js/jquery-3.6.0.min.js"></script>
+    <script type="application/javascript" src="js/papaparse.min.js"></script>
+    <script type="application/javascript" src="js/vaccines.js"></script>
+    <style>
+     html, body, #main {
+         margin: 0;
+         width: 100%;
+         height: 100%;
+         font-family: sans-serif;
+         line-height: 1.3em;
+     }
+     #main {
+         display: flex;
+         flex-direction: column;
+     }
+     #frodo-iframe {
+         flex: 1;
+         border: none;
+     }
+     #description {
+         margin: 0;
+         padding: 25px;
+         border-top: 3px solid black;
+     }
+     #description span {
+         font-weight: bold;
+         white-space: nowrap;
+     }
+     #description a,
+     #description a:visited,
+     #description a:active {
+         color: #0170d2;
+         white-space: nowrap;
+     }
+    </style>
+  </head>
+  <body>
+    <div id="main" style="display: none;">
+      <iframe id="frodo-iframe"></iframe>
+      <p id="description">
+        With a projected first-dose vaccination rate of <span id="daily-first-doses"></span>
+        and a lag time of <span id="lag-days"></span> between first and second doses, the
+        estimated dates for NZ to reach <span id="target-percent"></span> vaccination are
+        <span id="first-end-date"></span> for first doses, and <span id="second-end-date"></span> for
+        second doses. Data used to make estimates was sourced from <a href="https://github.com/minhealthnz/nz-covid-data">github.com/minhealthnz/nz-covid-data</a>.
+        Based on <a href="https://ben-denham.github.io/journey-with-frodo">Journey with Frodo</a>, also see the <a href="index.html">plain progress
+        tracker</a>, source code available <a href="https://github.com/ben-denham/covid-countdown">here</a>.
+      </p>
+    </div>
+    <script type="application/javascript">
+     (function($, vaccines) {
+
+       vaccines.getVaccineStats().then(stats => {
+         const { startDate, firstEndDate, secondEndDate, dailyFirstDoses,
+                 secondDoseLagDays, targetProportion } = stats;
+         const iframeUrl = (
+           'https://ben-denham.github.io/journey-with-frodo/'
+           + '?start=' + startDate.toISOString().slice(0, 10)
+           + '&end=' + secondEndDate.toISOString().slice(0, 10)
+           + '&title=NZ%27s+Road+to+Covid+Vaccination');
+         $('#frodo-iframe').attr('src', iframeUrl);
+         $('#daily-first-doses').text(dailyFirstDoses.toLocaleString() + '/day');
+         $('#lag-days').text(secondDoseLagDays.toLocaleString() + ' days');
+         $('#target-percent').text((targetProportion * 100).toString() + '%');
+         $('#first-end-date').text(firstEndDate.toDateString());
+         $('#second-end-date').text(secondEndDate.toDateString());
+         $('#main').show();
+       });
+
+     })(jQuery, vaccines);
+    </script>
+  </body>
+</html>

@@ -1,134 +1,202 @@
 <!doctype html>
 <html>
   <head>
-    <title>NZ's Road to Covid Vaccination</title>
-    <link rel="icon" type="image/png" href="favicon.ico"/>
+    <title>NZ Covid Vaccination Tracker</title>
     <script type="application/javascript" src="js/jquery-3.6.0.min.js"></script>
     <script type="application/javascript" src="js/papaparse.min.js"></script>
+    <script type="application/javascript" src="js/vaccines.js"></script>
     <style>
      html, body, #main {
          margin: 0;
          width: 100%;
          height: 100%;
+         font-family: sans-serif;
+         line-height: 1.3em;
      }
      #main {
          display: flex;
          flex-direction: column;
      }
-     #frodo-iframe {
-         flex: 1;
-         border: none;
+     #container {
+         padding: 20px;
+         margin: auto;
+         max-width: 800px;
      }
-     #description {
+     h1, h2 {
+         text-align: center;
+     }
+     h2 {
+         margin-bottom: 10px;
+         text-decoration: underline;
+     }
+     .description {
          margin: 0;
          padding: 15px;
-         font-family: sans-serif;
-         line-height: 1.3em;
-         border-top: 3px solid black;
-         display: none;
+         text-align: center;
      }
-     #description span {
+     .description .variable {
          font-weight: bold;
+         white-space: nowrap;
      }
-     #description a,
-     #description a:visited,
-     #description a:active {
+     .description a,
+     .description a:visited,
+     .description a:active {
          color: #0170d2;
+         white-space: nowrap;
+     }
+     .progress {
+         position: relative;
+         width: 100%;
+         height: 145px;
+         margin-bottom: 40px;
+     }
+     .progress .label {
+         position: absolute;
+         line-height: 30px;
+         text-align: right;
+         background: #FFFFFFAA;
+     }
+     .progress .label-inner {
+         padding-right: 5px;
+         border-right: 3px solid black;
+     }
+     .progress .label.target-label {
+         top: 0;
+     }
+     .progress .label.target-label .label-inner {
+         padding-bottom: 30px;
+     }
+     .progress .label.current-label {
+         top: 30px;
+     }
+     .progress .label.days-label {
+         top: 100px;
+         text-align: center;
+     }
+     .progress .label.days-label .label-bar {
+         height: 15px;
+         border: 3px solid black;
+     }
+     .progress .label.days-label .label-text {
+         position: absolute;
+         right: 0;
+         margin-top: -3px;
+         line-height: 30px;
+         display: inline-block;
+         padding: 0px 5px;
+         border: 3px solid black;
+         border-bottom: none;
+         width: 100px;
+     }
+     .progress .progress-bar {
+         top: 60px;
+         position: absolute;
+         height: 40px;
+         width: 100%;
+     }
+     .progress .progress-bar-background {
+         background: #E3E3E3;
+         margin-top: -3px;
+         margin-left: -3px;
+         border: 3px solid black;
+         border-radius: 5px;
+     }
+     .progress .progress-bar-target {
+         background: #FFA719;
+     }
+     .progress .progress-bar-current {
+         background: #0076E0;
      }
     </style>
   </head>
   <body>
-    <div id="main">
-      <iframe id="frodo-iframe"></iframe>
-      <p id="description">
-        With a projected first-dose vaccination rate of <span id="daily-first-doses"></span>
-        and a lag time of <span id="lag-days"></span> between first and second doses, the
-        projected date to reach <span id="target-percent"></span> of second doses is
-        <span id="end-date"></span>. Data sourced from <a href="https://github.com/minhealthnz/nz-covid-data">github.com/minhealthnz/nz-covid-data</a>.
-        Based on <a href="https://ben-denham.github.io/journey-with-frodo">Journey with Frodo</a>,
-        source code available <a href="https://github.com/ben-denham/covid-countdown">here</a>.
-      </p>
+    <div id="main" style="display: none;"'>
+      <div id="container">
+        <h1>NZ Covid Vaccination Tracker</h1>
+        <p class="description">
+          With a projected first-dose vaccination rate of <span class="variable" id="daily-first-doses"></span>
+          and a lag time of <span class="variable" id="lag-days"></span> between first and second doses, the
+          estimated dates for NZ to reach <span class="variable" id="target-percent"></span> vaccination are
+          <span class="variable" id="first-end-date"></span> for first
+          doses, and <span class="variable" id="second-end-date"></span> for
+          second doses.
+        </p>
+        <h2>First Dose Progress Tracker</h2>
+        <div class="progress">
+          <div id="progress-label-target-first" class="label target-label"><div class="label-inner"></div></div>
+          <div id="progress-label-current-first" class="label current-label"><div class="label-inner"></div></div>
+          <div class="progress-bar progress-bar-background"></div>
+          <div id="progress-bar-target-first" class="progress-bar progress-bar-target"></div>
+          <div id="progress-bar-current-first" class="progress-bar progress-bar-current"></div>
+          <div id="progress-label-days-first" class="label days-label"><div class="label-bar"></div><div class="label-text"></div></div>
+        </div>
+        <h2>Second Dose Progress Tracker</h2>
+        <div class="progress">
+          <div id="progress-label-target-second" class="label target-label"><div class="label-inner"></div></div>
+          <div id="progress-label-current-second" class="label current-label"><div class="label-inner"></div></div>
+          <div class="progress-bar progress-bar-background"></div>
+          <div id="progress-bar-target-second" class="progress-bar progress-bar-target"></div>
+          <div id="progress-bar-current-second" class="progress-bar progress-bar-current"></div>
+          <div id="progress-label-days-second" class="label days-label"><div class="label-bar"></div><div class="label-text"></div></div>
+        </div>
+        <p class="description">
+          Data used to make estimates was sourced from <a href="https://github.com/minhealthnz/nz-covid-data">github.com/minhealthnz/nz-covid-data</a>.
+          Also see the <a href="frodo.html">"Journey with Frodo" progress tracker</a>,
+          source code available <a href="https://github.com/ben-denham/covid-countdown">here</a>.
+        </p>
+      </div>
     </div>
     <script type="application/javascript">
-     (function($) {
+     (function($, vaccines) {
 
-       let csvUrl = 'https://raw.githubusercontent.com/minhealthnz/nz-covid-data/main/vaccine-data/latest/doses_by_date.csv'
-       let startDate = new Date('2021-08-16');
-       let regressionDays = 7;
-       let totalPopulation = 4209057;
-       let targetProportion = 0.9;
-       let targetDoses = totalPopulation * targetProportion;
+       function formatPercent(proportion) {
+         return Math.round(proportion * 100).toString() + '%'
+       }
 
-       Papa.parse(csvUrl, {
-         download: true,
-         header: true,
-         dynamicTyping: true,
-         skipEmptyLines: true,
-         transformHeader: function(header) {
-           switch (header) {
-             case 'Date':
-               return 'date';
-             case 'First dose administered':
-               return 'first_doses';
-             case 'Second dose administered':
-               return 'second_doses';
-             default:
-               return header;
-           }
-         },
-         complete: function(result) {
-           let vaccineRows = result.data;
+       vaccines.getVaccineStats().then(stats => {
+         const { startDate, firstEndDate, secondEndDate, daysUntilFirstDoseTarget,
+                 daysUntilSecondDoseTarget, dailyFirstDoses, secondDoseLagDays,
+                 targetProportion, firstDosesProportion, secondDosesProportion } = stats;
+         $('#daily-first-doses').text(dailyFirstDoses.toLocaleString() + '/day');
+         $('#lag-days').text(secondDoseLagDays.toLocaleString() + ' days');
+         $('#target-percent').text(formatPercent(targetProportion));
+         $('#first-end-date').text(firstEndDate.toDateString());
+         $('#second-end-date').text(secondEndDate.toDateString());
 
-           // Add cumulative totals to each row.
-           let firstDoseTotal = 0;
-           let secondDoseTotal = 0;
-           vaccineRows.forEach(function(row) {
-             firstDoseTotal += row['first_doses'];
-             row['total_first_doses'] = firstDoseTotal;
-             secondDoseTotal += row['second_doses'];
-             row['total_second_doses'] = secondDoseTotal;
-           });
+         $('#progress-bar-target-first').css('width', formatPercent(targetProportion));
+         $('#progress-label-target-first').css('width', formatPercent(targetProportion));
+         $('#progress-label-target-first .label-inner').text(formatPercent(targetProportion));
+         $('#progress-bar-current-first').css('width', formatPercent(firstDosesProportion));
+         $('#progress-label-current-first').css('width', formatPercent(firstDosesProportion));
+         $('#progress-label-current-first .label-inner').text(formatPercent(firstDosesProportion));
+         const firstDaysLeftMargin = Math.round((firstDosesProportion) * 100) / 100;
+         const firstDaysRightMargin = Math.round((1 - targetProportion) * 100) / 100;
+         $('#progress-label-days-first').css({
+           'margin-left': formatPercent(firstDaysLeftMargin),
+           'margin-right': formatPercent(firstDaysRightMargin),
+           'width': formatPercent(1 - (firstDaysLeftMargin + firstDaysRightMargin)),
+         });
+         $('#progress-label-days-first .label-text').text(daysUntilFirstDoseTarget.toString() + ' days');
 
-           // Find the mean daily first doses over the last regressionDays.
-           let regressionFirstTotal = vaccineRows.slice(-regressionDays).reduce(function(sum, row) { return sum + row['first_doses']; }, 0);
-           let regressionFirstDailyMean = regressionFirstTotal / regressionDays;
+         $('#progress-bar-target-second').css('width', formatPercent(targetProportion));
+         $('#progress-label-target-second').css('width', formatPercent(targetProportion));
+         $('#progress-label-target-second .label-inner').text(formatPercent(targetProportion));
+         $('#progress-bar-current-second').css('width', formatPercent(secondDosesProportion));
+         $('#progress-label-current-second').css('width', formatPercent(secondDosesProportion));
+         $('#progress-label-current-second .label-inner').text(formatPercent(secondDosesProportion));
+         const secondDaysLeftMargin = Math.round((secondDosesProportion) * 100) / 100;
+         const secondDaysRightMargin = Math.round((1 - targetProportion) * 100) / 100;
+         $('#progress-label-days-second').css({
+           'margin-left': formatPercent(secondDaysLeftMargin),
+           'margin-right': formatPercent(secondDaysRightMargin),
+           'width': formatPercent(1 - (secondDaysLeftMargin + secondDaysRightMargin)),
+         });
+         $('#progress-label-days-second .label-text').text(daysUntilSecondDoseTarget.toString() + ' days');
 
-           let daysUntilFirstDoseTarget = Math.ceil((targetDoses - firstDoseTotal) / regressionFirstDailyMean);
-
-           // Find the first day first doses exceeded the current
-           // second dose total (because the index is one less than the
-           // day represented by it, this is the count of the day before
-           // it was exceeded).
-           let indexFirstExceededCurrentSecond =  vaccineRows.findIndex(function(row) {
-             return row['total_first_doses'] > secondDoseTotal
-           });
-           // Find the number of days it took for second doses to catch up.
-           let secondDoseLagDays = vaccineRows.length - indexFirstExceededCurrentSecond;
-
-           // Compute the project count of days until the second dose
-           // target is reached.
-           let daysUntilSecondDoseTarget = daysUntilFirstDoseTarget + secondDoseLagDays;
-
-           let latestDate = new Date(vaccineRows[vaccineRows.length - 1]['date']);
-           let endDate = new Date(latestDate);
-           endDate.setDate(endDate.getDate() + daysUntilSecondDoseTarget);
-
-           // Update page.
-           let iframeUrl = (
-             'https://ben-denham.github.io/journey-with-frodo/'
-             + '?start=' + startDate.toISOString().slice(0, 10)
-             + '&end=' + endDate.toISOString().slice(0, 10)
-             + '&title=NZ%27s+Road+to+Covid+Vaccination');
-           $('#frodo-iframe').attr('src', iframeUrl);
-           $('#daily-first-doses').text(Math.round(regressionFirstDailyMean).toLocaleString() + '/day');
-           $('#lag-days').text(secondDoseLagDays.toLocaleString() + ' days');
-           $('#target-percent').text((targetProportion * 100).toString() + '%');
-           $('#end-date').text(endDate.toDateString());
-           $('#description').show();
-         }
+         $('#main').show();
        });
 
-     })(jQuery);
+     })(jQuery, vaccines);
     </script>
   </body>
 </html>
