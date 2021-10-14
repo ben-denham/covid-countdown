@@ -53,9 +53,11 @@
     </div>
     <script type="application/javascript">
      (function($, vaccines) {
+       // Date August 2021 lockdown began.
+       const startDate = new Date('2021-08-16');
 
        vaccines.getVaccineStats().then(stats => {
-         const { startDate, firstEndDate, secondEndDate, dailyFirstDoses,
+         const { firstEndDate, secondEndDate, dailyFirstDoses,
                  secondDoseLagDays, targetProportion } = stats;
          const iframeUrl = (
            'https://ben-denham.github.io/journey-with-frodo/'

@@ -154,7 +154,7 @@
        }
 
        vaccines.getVaccineStats().then(stats => {
-         const { startDate, firstEndDate, secondEndDate, daysUntilFirstDoseTarget,
+         const { firstEndDate, secondEndDate, daysUntilFirstDoseTarget,
                  daysUntilSecondDoseTarget, dailyFirstDoses, secondDoseLagDays,
                  targetProportion, firstDosesProportion, secondDosesProportion } = stats;
          $('#daily-first-doses').text(dailyFirstDoses.toLocaleString() + '/day');

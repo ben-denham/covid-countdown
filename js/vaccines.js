@@ -2,8 +2,6 @@
 
   const vaccinesCsvUrl = 'https://raw.githubusercontent.com/minhealthnz/nz-covid-data/main/vaccine-data/latest/doses_by_date.csv';
   const populationCsvUrl = 'https://raw.githubusercontent.com/minhealthnz/nz-covid-data/main/vaccine-data/latest/tla.csv';
-  // Date August 2021 lockdown began.
-  const startDate = new Date('2021-08-16');
   const regressionDays = 7;
   const targetProportion = 0.9;
 
@@ -11,6 +9,11 @@
     const newDate = new Date(date);
     newDate.setDate(newDate.getDate() + days);
     return newDate;
+  }
+
+  function daysBetween(dateA, dateB) {
+    // Divide MS difference by MS per day
+    return Math.floor((dateB - dateA) / (1000 * 60 * 60 * 24));
   }
 
   function getVaccineStats() {
@@ -80,8 +83,9 @@
         const latestRow = vaccineRows[vaccineRows.length - 1]
         const firstDosesProportion = latestRow['total_first_doses'] / population;
         const secondDosesProportion = latestRow['total_second_doses'] / population;
-        const latestDate = new Date(latestRow['date']);
         const targetDoses = population * targetProportion;
+        const latestDate = new Date(latestRow['date']);
+        const daysUntilNow = daysBetween(latestDate, new Date(Date.now()));
 
         // Find the mean daily first doses over the last regressionDays.
         const regressionFirstTotal = vaccineRows
@@ -112,11 +116,10 @@
                                : addDays(firstEndDate, secondDoseLagDays));
 
         return {
-          startDate,
           firstEndDate,
           secondEndDate,
-          daysUntilFirstDoseTarget,
-          daysUntilSecondDoseTarget,
+          daysUntilFirstDoseTarget: daysUntilFirstDoseTarget - daysUntilNow,
+          daysUntilSecondDoseTarget: daysUntilSecondDoseTarget - daysUntilNow,
           dailyFirstDoses,
           secondDoseLagDays,
           targetProportion,
