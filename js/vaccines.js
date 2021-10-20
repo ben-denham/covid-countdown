@@ -71,7 +71,9 @@
         complete: (result => {
           const populationRows = result.data;
           const totalPopulationRow = populationRows.find(row => row['region'] == 'Grand Total')
-          const population = parseInt(totalPopulationRow['population'].replaceAll(',', ''));
+          const population = parseInt(totalPopulationRow['population']
+                                      .toString()
+                                      .replaceAll(',', ''));
           resolve(population);
         })
       });
